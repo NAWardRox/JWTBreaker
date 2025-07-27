@@ -38,6 +38,9 @@ func main() {
 	// Initialize logger
 	log = logger.Default()
 	
+	// Display author information
+	displayAuthorInfo()
+	
 	// Create root command
 	rootCmd := &cobra.Command{
 		Use:   constants.AppName,
@@ -424,4 +427,12 @@ func formatNumber(n uint64) string {
 	}
 	// For very high values, cap at millions for readability
 	return fmt.Sprintf("%.0fM", float64(n)/1000000)
+}
+
+func displayAuthorInfo() {
+	fmt.Println("╭─────────────────────────────────────────╮")
+	fmt.Printf("│             JWT-Crack v%-8s        │\n", version)
+	fmt.Println("│         Created by NAWardRox            │")
+	fmt.Println("╰─────────────────────────────────────────╯")
+	fmt.Println()
 }
