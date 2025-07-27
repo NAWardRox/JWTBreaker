@@ -1,0 +1,77 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.22'
+        
+    - name: Cache Go modules
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cache/go-build
+          ~/go/pkg/mod
+        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+        restore-keys: |
+          ${{ runner.os }}-go-
+          
+    - name: Run tests
+      run: go test ./...
+      
+    - name: Build binaries
+      run: |
+        # Linux
+        GOOS=linux GOARCH=amd64 go build -ldflags="-s -w -X main.version=${{ github.ref_name }} -X main.commit=${{ github.sha }}" -o jwt-crack-linux-amd64 ./cmd/jwt-crack
+        GOOS=linux GOARCH=arm64 go build -ldflags="-s -w -X main.version=${{ github.ref_name }} -X main.commit=${{ github.sha }}" -o jwt-crack-linux-arm64 ./cmd/jwt-crack
+        
+        # macOS
+        GOOS=darwin GOARCH=amd64 go build -ldflags="-s -w -X main.version=${{ github.ref_name }} -X main.commit=${{ github.sha }}" -o jwt-crack-macos-amd64 ./cmd/jwt-crack
+        GOOS=darwin GOARCH=arm64 go build -ldflags="-s -w -X main.version=${{ github.ref_name }} -X main.commit=${{ github.sha }}" -o jwt-crack-macos-arm64 ./cmd/jwt-crack
+        
+        # Windows
+        GOOS=windows GOARCH=amd64 go build -ldflags="-s -w -X main.version=${{ github.ref_name }} -X main.commit=${{ github.sha }}" -o jwt-crack-windows-amd64.exe ./cmd/jwt-crack
+        GOOS=windows GOARCH=arm64 go build -ldflags="-s -w -X main.version=${{ github.ref_name }} -X main.commit=${{ github.sha }}" -o jwt-crack-windows-arm64.exe ./cmd/jwt-crack
+        
+    - name: Create checksums
+      run: |
+        sha256sum jwt-crack-* > checksums.txt
+        
+    - name: Generate changelog
+      id: changelog
+      run: |
+        echo "## Changes" > changelog.md
+        git log --pretty=format:"- %s" $(git describe --tags --abbrev=0 HEAD^)..HEAD >> changelog.md
+        
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: |
+          jwt-crack-linux-amd64
+          jwt-crack-linux-arm64
+          jwt-crack-macos-amd64
+          jwt-crack-macos-arm64
+          jwt-crack-windows-amd64.exe
+          jwt-crack-windows-arm64.exe
+          checksums.txt
+        body_path: changelog.md
+        draft: false
+        prerelease: ${{ contains(github.ref, 'alpha') || contains(github.ref, 'beta') || contains(github.ref, 'rc') }}
+        generate_release_notes: true

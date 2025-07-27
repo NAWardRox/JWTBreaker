@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(go mod:*)",
+      "Bash(go build:*)",
+      "Bash(./jwt-crack version)",
+      "Bash(rm:*)",
+      "Bash(mkdir:*)",
+      "Bash(./jwt-crack-v2:*)",
+      "Bash(go test:*)",
+      "Bash(./jwt-crack:*)",
+      "Bash(timeout:*)",
+      "Bash(pkill:*)"
+    ],
+    "deny": []
+  }
+}
